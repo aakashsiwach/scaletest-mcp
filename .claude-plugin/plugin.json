@@ -2,7 +2,7 @@
   "name": "scaletest",
   "displayName": "ScaleTest MCP",
   "description": "Local-first HTTP load testing and guarded Kubernetes scaling experiments through Claude Code.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "Aakash Siwach"
   },
@@ -23,6 +23,7 @@
         "--directory",
         "${CLAUDE_PLUGIN_ROOT}",
         "run",
+        "--no-sync",
         "scaletest"
       ]
     }
