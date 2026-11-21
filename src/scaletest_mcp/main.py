@@ -1,6 +1,6 @@
 from mcp.server.fastmcp import FastMCP
 
-from .config import settings
+from .availability import (\n    get_availability_report,\n    mark_scaling_event,\n    start_availability_monitor,\n    stop_availability_monitor,\n)\nfrom .config import settings
 from .engine import latest_summary, run_load_test, validate_url
 from .kubernetes import (
     CONFIRMATION,
@@ -44,7 +44,7 @@ def get_safety_limits() -> dict:
         "kubernetes_allowed_namespaces": sorted(settings.k8s_allowed_namespaces),
         "kubernetes_allowed_deployments": sorted(settings.k8s_allowed_deployments),
         "kubernetes_mutation_confirmation": CONFIRMATION,
-        "public_url_can_modify_infrastructure": False,
+        "public_url_can_modify_infrastructure": False,\n        "availability_monitoring": {\n            "min_probe_interval_ms": 250,\n            "max_probe_interval_ms": 10000,\n            "default_max_downtime_slo_ms": 3000,\n            "max_observation_seconds": 3600,\n            "max_concurrent_monitors": 3,\n        },
     }
 
 @mcp.tool()
@@ -88,3 +88,36 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+@mcp.tool()
+def start_scaling_availability_monitor(
+    url: str,
+    interval_ms: int = 250,
+    observation_duration_seconds: int = 180,
+    max_downtime_ms: int = 3000,
+    method: str = "HEAD",
+    authorization_confirmed: bool = False,
+) -> dict:
+    """Start passive availability probes; requires authorization and does not generate load."""
+    return start_availability_monitor(
+        url, interval_ms, observation_duration_seconds, max_downtime_ms,
+        method, authorization_confirmed,
+    )
+
+@mcp.tool()
+def mark_scaling_event_timestamp(
+    monitor_id: str,
+    event_name: str = "scaling_change",
+) -> dict:
+    """Record the timestamp when an operator starts an approved scaling change."""
+    return mark_scaling_event(monitor_id, event_name)
+
+@mcp.tool()
+def get_scaling_availability_report(monitor_id: str) -> dict:
+    """Get the live monitor snapshot or final availability regression report."""
+    return get_availability_report(monitor_id)
+
+@mcp.tool()
+def stop_scaling_availability_monitor(monitor_id: str) -> dict:
+    """Stop passive monitoring and persist JSON and Markdown reports."""
+    return stop_availability_monitor(monitor_id)

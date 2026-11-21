@@ -54,3 +54,18 @@ Always distinguish:
 - public HTTP performance from real infrastructure scaling.
 
 Include the target, date/time if available, workload settings, safety limits, results, scaling changes, and any measurement limitations.
+
+## Scaling availability regression experiment
+
+1. Obtain explicit authorization to probe the target and agree the probe interval and observation window.
+2. Call get_safety_limits and explain that the default availability SLO is 3,000 ms.
+3. Call start_scaling_availability_monitor with the approved URL, interval (250 ms default), observation duration, max_downtime_ms=3000, method (HEAD by default; GET if HEAD is unsupported), and authorization_confirmed=true.
+4. Save the returned monitor_id. Wait until initial probes have been recorded.
+5. When the operator actually starts the scaling change, call mark_scaling_event_timestamp immediately. This records the time the marker tool was called; it does not independently verify the infrastructure event.
+6. Continue monitoring through recovery, then call stop_scaling_availability_monitor.
+7. Report the SLO result, availability, successful/failed probe counts, estimated and conservative outage duration, recovery time and nearby scaling markers.
+8. Use get_scaling_availability_report for interim snapshots or persisted reports.
+
+Do not run this against a third-party public target without explicit permission. The monitor is not a load test; it sends one probe per interval. A 250 ms interval means up to four requests per second. If HTTP 403 or 429 is received, stop monitoring and do not retry through alternate paths.
+
+The report's scaling-event relationship is temporal correlation only. It does not prove scaling caused the outage. Use cloud/Kubernetes events, load-balancer logs and application telemetry for causal analysis.

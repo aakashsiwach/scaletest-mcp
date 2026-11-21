@@ -144,7 +144,7 @@ Environment variables:
 - get_safety_limits(): configured safety policies.
 - inspect_local_deployment_scaling(...): read replica, resource and HPA state.
 - change_local_horizontal_scaling(...): update HPA minimum/maximum replicas.
-- change_local_vertical_resources(...): patch a Deployment's pod CPU/memory requests and limits.
+- change_local_vertical_resources(...): patch a Deployment's pod CPU/memory requests and limits.\n- start_scaling_availability_monitor(...): start passive HTTP probes around an approved scaling event.\n- mark_scaling_event_timestamp(...): record the operator-reported scaling-change timestamp.\n- get_scaling_availability_report(...): retrieve live or final results.\n- stop_scaling_availability_monitor(...): stop monitoring and save Markdown/JSON reports.
 
 Vertical resource changes update the pod template and trigger a Kubernetes rollout; they are not in-place resizing. Horizontal changes edit HPA replica bounds and HPA reconciles asynchronously. Metrics Server must be healthy for CPU-based HPA to react to load.
 
@@ -165,7 +165,7 @@ Delete the k6 Job before repeating it:
 
     kubectl -n scaletest-demo delete job scaletest-k6-load
 
-Monitor the load-generator's CPU/memory separately; otherwise it can become the bottleneck. These controls only affect the allowlisted local demo cluster, never Defectly's infrastructure.
+Monitor the load-generator's CPU/memory separately; otherwise it can become the bottleneck. These controls affect only the allowlisted local demo cluster.
 
 ## Development
 
