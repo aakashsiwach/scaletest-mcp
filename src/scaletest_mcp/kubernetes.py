@@ -25,9 +25,24 @@ def _check_scope(namespace: str, deployment_name: str) -> None:
 
 def _check_mutation(confirmation: str) -> None:
     if not settings.enable_k8s_mutations:
-        raise PermissionError("Cluster mutations are disabled. Set SCALETEST_ENABLE_K8S_MUTATIONS=true for an isolated demo cluster.")
+        raise PermissionError("Cluster mutations are disabled. Set SCALETEST_ENABLE_K8S_MUTATIONS=true only for a disposable local demo cluster.")
     if confirmation != CONFIRMATION:
         raise PermissionError(f"Explicit confirmation required: pass confirmation='{CONFIRMATION}'.")
+
+def _check_local_context() -> str:
+    from kubernetes import config
+    try:
+        config.load_kube_config()
+        _, active = config.list_kube_config_contexts()
+    except Exception as exc:
+        raise PermissionError(f"Could not verify the active kubeconfig context: {exc}") from exc
+    context_name = active.get("name") if active else None
+    if context_name not in settings.k8s_allowed_contexts:
+        raise PermissionError(
+            f"Active context '{context_name}' is not allowlisted. Allowed contexts: {sorted(settings.k8s_allowed_contexts)}. "
+            "Use a dedicated local Kind/Minikube context."
+        )
+    return context_name
 
 def _deployment_summary(item) -> dict:
     return {
@@ -87,6 +102,7 @@ def set_horizontal_scaling(
     try:
         _check_mutation(confirmation)
         _check_scope(namespace, deployment_name)
+        context_name = _check_local_context()
         if not (1 <= min_replicas <= max_replicas <= 10):
             raise ValueError("Require 1 <= min_replicas <= max_replicas <= 10.")
         client = _client()
@@ -104,12 +120,13 @@ def set_horizontal_scaling(
         return {
             "changed": True,
             "operation": "horizontal_scaling",
+            "context": context_name,
             "hpa": patched.metadata.name,
             "namespace": namespace,
             "deployment": deployment_name,
             "min_replicas": patched.spec.min_replicas,
             "max_replicas": patched.spec.max_replicas,
-            "note": "HPA reconciles asynchronously. Verify actual replicas and metrics with inspect_deployment_scaling; Metrics Server must be healthy.",
+            "note": "HPA reconciles asynchronously. Verify actual replicas and metrics with inspect_local_deployment_scaling; Metrics Server must be healthy.",
         }
     except Exception as exc:
         return {"changed": False, "error": str(exc)}
@@ -140,6 +157,7 @@ def set_vertical_resources(
     try:
         _check_mutation(confirmation)
         _check_scope(namespace, deployment_name)
+        context_name = _check_local_context()
         if _cpu_millicores(cpu_limit) < _cpu_millicores(cpu_request):
             raise ValueError("CPU limit must be greater than or equal to CPU request.")
         if _memory_bytes(memory_limit) < _memory_bytes(memory_request):
@@ -164,6 +182,7 @@ def set_vertical_resources(
         return {
             "changed": True,
             "operation": "vertical_resource_scaling",
+            "context": context_name,
             "deployment": deployment_name,
             "namespace": namespace,
             "container": container_name,

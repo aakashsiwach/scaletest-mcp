@@ -15,7 +15,7 @@ Only test systems you own or have explicit written authorization to test. Agree 
 - Public IP validation; private/loopback targets are blocked unless local mode is explicitly enabled.
 - Kubernetes deployment/HPA observation.
 - Explicitly gated local horizontal scaling (HPA bounds) and vertical resource changes.
-- Kubernetes mutations are disabled by default, require an exact confirmation string, and are limited to allowlisted namespaces/deployments.
+- Kubernetes mutations are disabled by default, require an exact confirmation string, and are restricted to allowlisted namespaces, Deployments and Kubernetes contexts.
 - Local demo app, Deployment, Service and HPA manifests.
 - No proxy rotation, IP rotation or WAF bypass.
 
@@ -47,7 +47,15 @@ Windows PowerShell:
 
 ## Enable local demo-cluster scaling controls
 
-These operations are disabled by default. Use only a disposable local Kind/Minikube cluster:
+Create a dedicated local cluster with the expected context name:
+
+    kind create cluster --name scaletest-demo
+
+Install Kubernetes client support:
+
+    uv sync --extra kubernetes
+
+Enable mutations only for this disposable local cluster:
 
 Linux/macOS:
 
@@ -58,12 +66,14 @@ Windows PowerShell:
     $env:SCALETEST_ENABLE_K8S_MUTATIONS="true"
     uv run scaletest
 
-Install Kubernetes client support with:
+Default mutation scope is limited to:
+- Kubernetes context: kind-scaletest-demo or minikube
+- Namespace: scaletest-demo
+- Deployment: scaletest-demo
 
-    uv sync --extra kubernetes
+Override only deliberately:
 
-Default mutation scope is restricted to namespace and Deployment name scaletest-demo. Override only deliberately:
-
+- SCALETEST_K8S_ALLOWED_CONTEXTS
 - SCALETEST_K8S_ALLOWED_NAMESPACES
 - SCALETEST_K8S_ALLOWED_DEPLOYMENTS
 
@@ -76,6 +86,7 @@ Environment variables:
 - SCALETEST_MAX_RPS (default 5; used for per-VU pacing)
 - SCALETEST_ALLOW_PRIVATE_TARGETS (default false)
 - SCALETEST_ENABLE_K8S_MUTATIONS (default false)
+- SCALETEST_K8S_ALLOWED_CONTEXTS (default kind-scaletest-demo,minikube)
 - SCALETEST_K8S_ALLOWED_NAMESPACES (default scaletest-demo)
 - SCALETEST_K8S_ALLOWED_DEPLOYMENTS (default scaletest-demo)
 
@@ -110,15 +121,15 @@ Add this MCP server to Cursor's MCP configuration, using the absolute local repo
 
 ## Local Kubernetes demo
 
-1. Create a Kind or Minikube cluster.
+1. Create a Kind cluster: kind create cluster --name scaletest-demo
 2. Build the demo image: docker build -t scaletest-demo:local demo/app
-3. Load the image into Kind: kind load docker-image scaletest-demo:local
+3. Load the image: kind load docker-image scaletest-demo:local --name scaletest-demo
 4. Install Metrics Server compatible with your cluster.
-5. Apply the manifests: kubectl apply -f demo/kubernetes/deployment.yaml and kubectl apply -f demo/kubernetes/hpa.yaml
+5. Apply demo/kubernetes/deployment.yaml and demo/kubernetes/hpa.yaml.
 6. Verify: kubectl -n scaletest-demo get deploy,pods,hpa
-7. Configure ScaleTest with private targets and Kubernetes mutations enabled.
-8. Use a separate k6 pod/job against http://scaletest-demo.scaletest-demo.svc.cluster.local:8080 to generate test traffic.
-9. Change HPA bounds through the MCP tool and inspect replica count. For vertical scaling, change app CPU/memory resources through the MCP tool and watch the Deployment rollout.
+7. Set SCALETEST_ALLOW_PRIVATE_TARGETS=true and SCALETEST_ENABLE_K8S_MUTATIONS=true before launching MCP.
+8. Run a separate k6 load-generator Job inside the cluster against http://scaletest-demo.scaletest-demo.svc.cluster.local:8080.
+9. Change HPA bounds with change_local_horizontal_scaling and inspect actual replica count. For vertical scaling, use change_local_vertical_resources and observe the Deployment rollout.
 
 Monitor the load-generator's CPU/memory separately; otherwise it can become the bottleneck. These controls only affect the allowlisted local demo cluster, never Defectly's infrastructure.
 

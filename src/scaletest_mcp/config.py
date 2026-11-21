@@ -15,6 +15,7 @@ class Settings:
     enable_k8s_mutations: bool = os.getenv("SCALETEST_ENABLE_K8S_MUTATIONS", "false").lower() == "true"
     k8s_allowed_namespaces: frozenset[str] = _csv_env("SCALETEST_K8S_ALLOWED_NAMESPACES", "scaletest-demo")
     k8s_allowed_deployments: frozenset[str] = _csv_env("SCALETEST_K8S_ALLOWED_DEPLOYMENTS", "scaletest-demo")
+    k8s_allowed_contexts: frozenset[str] = _csv_env("SCALETEST_K8S_ALLOWED_CONTEXTS", "kind-scaletest-demo,minikube")
     results_dir: str = os.getenv("SCALETEST_RESULTS_DIR", "results")
 
 settings = Settings()
