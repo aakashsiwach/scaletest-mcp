@@ -11,19 +11,19 @@ Only test systems you own or have explicit written authorization to test. Agree 
 ## Features
 
 - MCP server with URL inspection, authorized k6 execution and test summary tools.
-- Conservative defaults: at most 10 virtual users and 60 seconds per test.
+- Conservative defaults: at most 10 virtual users and 60 seconds per public-URL test.
 - Public IP validation; private/loopback targets are blocked unless local mode is explicitly enabled.
 - Kubernetes deployment/HPA observation.
 - Explicitly gated local horizontal scaling (HPA bounds) and vertical resource changes.
 - Kubernetes mutations are disabled by default, require an exact confirmation string, and are restricted to allowlisted namespaces, Deployments and Kubernetes contexts.
-- Local demo app, Deployment, Service and HPA manifests.
+- Local demo app, Deployment, Service, HPA and in-cluster k6 Job manifests.
 - No proxy rotation, IP rotation or WAF bypass.
 
 ## Requirements
 
 - Python 3.10+
 - uv
-- Grafana k6
+- Grafana k6 on the MCP host for direct URL tests
 - Docker and Kind/Minikube for the Kubernetes scaling demo
 - Claude Code or Cursor (optional MCP client)
 
@@ -72,7 +72,6 @@ Default mutation scope is limited to:
 - Deployment: scaletest-demo
 
 Override only deliberately:
-
 - SCALETEST_K8S_ALLOWED_CONTEXTS
 - SCALETEST_K8S_ALLOWED_NAMESPACES
 - SCALETEST_K8S_ALLOWED_DEPLOYMENTS
@@ -80,7 +79,6 @@ Override only deliberately:
 Every mutation additionally requires the exact confirmation string returned by get_safety_limits: I_APPROVE_LOCAL_CLUSTER_SCALING.
 
 Environment variables:
-
 - SCALETEST_MAX_VUS (default 10)
 - SCALETEST_MAX_DURATION_SECONDS (default 60)
 - SCALETEST_MAX_RPS (default 5; used for per-VU pacing)
@@ -127,11 +125,11 @@ Add this MCP server to Cursor's MCP configuration, using the absolute local repo
 4. Install Metrics Server compatible with your cluster.
 5. Apply demo/kubernetes/deployment.yaml and demo/kubernetes/hpa.yaml.
 6. Verify: kubectl -n scaletest-demo get deploy,pods,hpa
-7. Set SCALETEST_ALLOW_PRIVATE_TARGETS=true and SCALETEST_ENABLE_K8S_MUTATIONS=true before launching MCP.
-8. Run a separate k6 load-generator Job inside the cluster against http://scaletest-demo.scaletest-demo.svc.cluster.local:8080.
+7. Launch MCP with SCALETEST_ALLOW_PRIVATE_TARGETS=true and SCALETEST_ENABLE_K8S_MUTATIONS=true.
+8. Apply demo/kubernetes/k6-load.yaml to generate load inside the cluster: kubectl apply -f demo/kubernetes/k6-load.yaml. Watch scaling with kubectl -n scaletest-demo get hpa,pods -w.
 9. Change HPA bounds with change_local_horizontal_scaling and inspect actual replica count. For vertical scaling, use change_local_vertical_resources and observe the Deployment rollout.
 
-Monitor the load-generator's CPU/memory separately; otherwise it can become the bottleneck. These controls only affect the allowlisted local demo cluster, never Defectly's infrastructure.
+The included k6 Job uses 20 virtual users for 120 seconds against the local demo Service. It is only intended for the disposable local demo cluster. Monitor the load-generator's CPU/memory separately; otherwise it can become the bottleneck. These controls only affect the allowlisted local demo cluster, never Defectly's infrastructure.
 
 ## Development
 
