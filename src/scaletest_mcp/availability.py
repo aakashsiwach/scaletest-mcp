@@ -155,8 +155,7 @@ def _run_monitor(session: dict[str, Any]) -> None:
                     break
                 next_at += interval
                 now = time.monotonic()
-                if next_at < now:
-                    next_at = now  # skip missed ticks; never burst to catch up
+                next_at = max(next_at, now)  # skip missed ticks; never burst to catch up
                 if session["stop_event"].wait(max(0.0, next_at - now)):
                     break
     except Exception as exc:  # noqa: BLE001 - capture monitor runtime errors in its report
@@ -276,9 +275,11 @@ def _render_markdown(report: dict[str, Any]) -> str:
         "",
         report["interpretation"],
         "",
-        "Probe sampling creates uncertainty around exact outage boundaries. The conservative upper bound "
-        "avoids understating downtime. If it crosses the SLO but the point estimate does not, the result "
-        "is INCONCLUSIVE rather than a false pass or failure.",
+        (
+            "Probe sampling creates uncertainty around exact outage boundaries. The conservative upper bound "
+            "avoids understating downtime. If it crosses the SLO but the point estimate does not, the result "
+            "is INCONCLUSIVE rather than a false pass or failure."
+        ),
     ])
     if report["stop_reason"]:
         lines.append(f"Monitor stop reason: {report['stop_reason']}")
