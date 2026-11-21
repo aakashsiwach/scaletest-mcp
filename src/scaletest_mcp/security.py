@@ -5,8 +5,10 @@ import ipaddress
 import socket
 from urllib.parse import urlparse
 
+
 class TargetValidationError(ValueError):
     """Raised when a target URL is invalid or outside the configured network policy."""
+
 
 def validate_target(url: str, allow_private: bool = False) -> str:
     value = url.strip()
@@ -27,7 +29,11 @@ def validate_target(url: str, allow_private: bool = False) -> str:
         raise TargetValidationError("Local targets are disabled. Set SCALETEST_ALLOW_PRIVATE_TARGETS=true for local demos.")
 
     try:
-        records = socket.getaddrinfo(host, port or (443 if parsed.scheme == "https" else 80), type=socket.SOCK_STREAM)
+        records = socket.getaddrinfo(
+            host,
+            port or (443 if parsed.scheme == "https" else 80),
+            type=socket.SOCK_STREAM,
+        )
     except socket.gaierror as exc:
         raise TargetValidationError(f"Could not resolve target host: {host}") from exc
 

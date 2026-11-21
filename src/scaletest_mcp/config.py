@@ -1,8 +1,10 @@
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
+
 
 def _csv_env(name: str, default: str) -> frozenset[str]:
     return frozenset(item.strip() for item in os.getenv(name, default).split(",") if item.strip())
+
 
 @dataclass(frozen=True)
 class Settings:
@@ -17,5 +19,6 @@ class Settings:
     k8s_allowed_deployments: frozenset[str] = _csv_env("SCALETEST_K8S_ALLOWED_DEPLOYMENTS", "scaletest-demo")
     k8s_allowed_contexts: frozenset[str] = _csv_env("SCALETEST_K8S_ALLOWED_CONTEXTS", "kind-scaletest-demo,minikube")
     results_dir: str = os.getenv("SCALETEST_RESULTS_DIR", "results")
+
 
 settings = Settings()

@@ -1,6 +1,7 @@
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import time
-from urllib.parse import urlparse, parse_qs
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import parse_qs, urlparse
+
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -13,7 +14,13 @@ class Handler(BaseHTTPRequestHandler):
         value = 1
         while time.perf_counter() < deadline:
             value = (value * 33 + 7) % 1_000_003
-        body = ("ScaleTest demo app OK; simulated_cpu_work_ms=" + str(work_ms) + "; checksum=" + str(value) + "\n").encode()
+        body = (
+            "ScaleTest demo app OK; simulated_cpu_work_ms="
+            + str(work_ms)
+            + "; checksum="
+            + str(value)
+            + "\n"
+        ).encode()
         self.send_response(200)
         self.send_header("Content-Type", "text/plain; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
@@ -22,5 +29,6 @@ class Handler(BaseHTTPRequestHandler):
 
     def log_message(self, format, *args):
         return
+
 
 ThreadingHTTPServer(("0.0.0.0", 8080), Handler).serve_forever()

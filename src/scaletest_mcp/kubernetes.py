@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 import re
+
 from .config import settings
 
+
 CONFIRMATION = "I_APPROVE_LOCAL_CLUSTER_SCALING"
+
 
 def _client():
     try:
@@ -13,9 +16,10 @@ def _client():
         raise RuntimeError("Install Kubernetes support with: uv sync --extra kubernetes") from exc
     try:
         config.load_kube_config()
-    except Exception:
+    except Exception:  # noqa: BLE001 - fall back to in-cluster credentials for read-only use
         config.load_incluster_config()
     return client
+
 
 def _check_scope(namespace: str, deployment_name: str) -> None:
     if namespace not in settings.k8s_allowed_namespaces:
@@ -23,18 +27,21 @@ def _check_scope(namespace: str, deployment_name: str) -> None:
     if deployment_name not in settings.k8s_allowed_deployments:
         raise ValueError(f"Deployment '{deployment_name}' is not in SCALETEST_K8S_ALLOWED_DEPLOYMENTS.")
 
+
 def _check_mutation(confirmation: str) -> None:
     if not settings.enable_k8s_mutations:
         raise PermissionError("Cluster mutations are disabled. Set SCALETEST_ENABLE_K8S_MUTATIONS=true only for a disposable local demo cluster.")
     if confirmation != CONFIRMATION:
         raise PermissionError(f"Explicit confirmation required: pass confirmation='{CONFIRMATION}'.")
 
+
 def _check_local_context() -> str:
     from kubernetes import config
+
     try:
         config.load_kube_config()
         _, active = config.list_kube_config_contexts()
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - return any kubeconfig/context validation failure to MCP caller
         raise PermissionError(f"Could not verify the active kubeconfig context: {exc}") from exc
     context_name = active.get("name") if active else None
     if context_name not in settings.k8s_allowed_contexts:
@@ -43,6 +50,7 @@ def _check_local_context() -> str:
             "Use a dedicated local Kind/Minikube context."
         )
     return context_name
+
 
 def _deployment_summary(item) -> dict:
     return {
@@ -62,7 +70,11 @@ def _deployment_summary(item) -> dict:
         ],
     }
 
-def inspect_deployment_scaling(namespace: str = "scaletest-demo", deployment_name: str = "scaletest-demo") -> dict:
+
+def inspect_deployment_scaling(
+    namespace: str = "scaletest-demo",
+    deployment_name: str = "scaletest-demo",
+) -> dict:
     """Read deployment replica/resource state and matching HPA configuration."""
     try:
         _check_scope(namespace, deployment_name)
@@ -85,11 +97,13 @@ def inspect_deployment_scaling(namespace: str = "scaletest-demo", deployment_nam
                     for metric in (hpa.spec.metrics or [])
                 ],
             }
-            for hpa in hpas if hpa.spec.scale_target_ref.name == deployment_name
+            for hpa in hpas
+            if hpa.spec.scale_target_ref.name == deployment_name
         ]
         return {"available": True, "deployment": _deployment_summary(deployment), "autoscalers": matching}
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - Kubernetes client errors vary by API operation
         return {"available": False, "error": str(exc)}
+
 
 def set_horizontal_scaling(
     namespace: str,
@@ -128,20 +142,29 @@ def set_horizontal_scaling(
             "max_replicas": patched.spec.max_replicas,
             "note": "HPA reconciles asynchronously. Verify actual replicas and metrics with inspect_local_deployment_scaling; Metrics Server must be healthy.",
         }
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - preserve structured MCP error responses
         return {"changed": False, "error": str(exc)}
+
 
 def _cpu_millicores(value: str) -> int:
     if not re.fullmatch(r"(?:[0-9]+m|[0-9]+)", value):
         raise ValueError("CPU must be an integer core value (for example 1) or millicores (for example 500m).")
-    return int(value[:-1]) if value.endswith("m") else int(value) * 1000
+    result = int(value[:-1]) if value.endswith("m") else int(value) * 1000
+    if result <= 0:
+        raise ValueError("CPU requests and limits must be greater than zero.")
+    return result
+
 
 def _memory_bytes(value: str) -> int:
     match = re.fullmatch(r"([0-9]+)(Ki|Mi|Gi)", value)
     if not match:
         raise ValueError("Memory must use Ki, Mi or Gi (for example 512Mi or 1Gi).")
     factor = {"Ki": 1024, "Mi": 1024**2, "Gi": 1024**3}[match.group(2)]
-    return int(match.group(1)) * factor
+    result = int(match.group(1)) * factor
+    if result <= 0:
+        raise ValueError("Memory requests and limits must be greater than zero.")
+    return result
+
 
 def set_vertical_resources(
     namespace: str,
@@ -193,5 +216,5 @@ def set_vertical_resources(
             "generation": patched.metadata.generation,
             "note": "Deployment pod-template changed; Kubernetes will perform a rolling replacement. This is not in-place resizing.",
         }
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - preserve structured MCP error responses
         return {"changed": False, "error": str(exc)}

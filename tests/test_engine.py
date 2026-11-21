@@ -2,6 +2,7 @@ import pytest
 
 from scaletest_mcp.engine import run_load_test
 
+
 @pytest.mark.asyncio
 async def test_load_test_requires_explicit_authorization():
     result = await run_load_test(
@@ -12,6 +13,7 @@ async def test_load_test_requires_explicit_authorization():
     )
     assert result["started"] is False
     assert "authorization" in result["error"].lower()
+
 
 @pytest.mark.asyncio
 async def test_load_test_rejects_vus_over_configured_cap():
