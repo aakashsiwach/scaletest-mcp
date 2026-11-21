@@ -19,7 +19,8 @@ export const options = {
   },
   thresholds: {
     http_req_failed: [{ threshold: "rate<0.10", abortOnFail: true, delayAbortEval: "2s" }],
-    scaletest_denied: [{ threshold: "rate<0.01", abortOnFail: true, delayAbortEval: "1s" }],
+    // Any observed 403/429 causes the run to abort rather than merely logging it.
+    scaletest_denied: [{ threshold: "rate==0", abortOnFail: true }],
   },
 };
 
@@ -39,8 +40,7 @@ export default function () {
     "not rate limited": (r) => r.status !== 429,
   });
 
-  // Do not retry or evade denials. The threshold aborts the run when the
-  // denied-response rate breaches its configured safety threshold.
+  // Do not retry or evade denials. The threshold aborts the test on a denial.
   if (isDenied) return;
   sleep(Math.max(1, vus / Math.max(1, maxRps)));
 }

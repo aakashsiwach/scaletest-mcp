@@ -187,6 +187,11 @@ def set_vertical_resources(
         client = _client()
         apps = client.AppsV1Api()
         deployment = apps.read_namespaced_deployment(deployment_name, namespace)
+        active_hpas = client.AutoscalingV2Api().list_namespaced_horizontal_pod_autoscaler(namespace).items
+        if any(hpa.spec.scale_target_ref.name == deployment_name for hpa in active_hpas):
+            raise ValueError(
+                "An HPA currently targets this Deployment. Remove or suspend the HPA before an isolated vertical-resource experiment."
+            )
         names = {container.name for container in deployment.spec.template.spec.containers}
         if container_name not in names:
             raise ValueError(f"Container '{container_name}' not found. Available containers: {sorted(names)}")
