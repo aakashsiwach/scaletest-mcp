@@ -17,6 +17,7 @@ Only test systems you own or have explicit written authorization to test. Agree 
 - Explicitly gated local horizontal scaling (HPA bounds) and vertical resource changes.
 - Kubernetes mutations are disabled by default, require an exact confirmation string, and are restricted to allowlisted namespaces, Deployments and Kubernetes contexts.
 - Claude Code plugin manifest, plugin-provided MCP server configuration and a ScaleTest usage Skill.
+- MIT license. The plugin declares wildcard target hosts because the user selects the authorized HTTP test destination at runtime; this is descriptive plugin metadata, not a security allow/deny policy.
 - Local demo app, Deployment, Service, HPA and in-cluster k6 Job manifests.
 - No proxy rotation, IP rotation or WAF bypass.
 
