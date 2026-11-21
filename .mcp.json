@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "scaletest": {
+      "command": "uv",
+      "args": ["--directory", ".", "run", "scaletest"]
+    }
+  }
+}

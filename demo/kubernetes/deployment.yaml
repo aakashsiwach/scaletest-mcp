@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scaletest-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scaletest-demo
+  template:
+    metadata:
+      labels:
+        app: scaletest-demo
+    spec:
+      containers:
+        - name: app
+          image: scaletest-demo:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scaletest-demo
+spec:
+  selector:
+    app: scaletest-demo
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

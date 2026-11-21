@@ -1,0 +1,5 @@
+{
+  "name": "scaletest",
+  "version": "0.1.0",
+  "description": "Local-first MCP tools for controlled HTTP load testing and Kubernetes scaling observation"
+}
