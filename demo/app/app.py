@@ -27,6 +27,13 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def do_HEAD(self):
+        # Lightweight health check used by ScaleTest's inspect_target tool.
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
     def log_message(self, format, *args):
         return
 
