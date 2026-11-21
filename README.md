@@ -63,7 +63,7 @@ Test the plugin directly from a local checkout:
 
     claude --plugin-dir .
 
-The plugin's .mcp.json uses CLAUDE_PLUGIN_ROOT, so it launches the MCP server from its installed plugin directory. The user must have uv installed; uv installs the project environment on first run. The plugin exposes the ScaleTest tools and the /scaletest:load-test Skill.
+The plugin manifest embeds its MCP server configuration and uses CLAUDE_PLUGIN_ROOT to launch the server from its installed plugin directory. The user must have uv installed. The plugin exposes the ScaleTest tools and the /scaletest:load-test Skill. There is intentionally no root .mcp.json, so Claude does not also parse CLAUDE_PLUGIN_ROOT as a project-level variable.
 
 For a reviewable plugin release, run:
 
@@ -73,16 +73,7 @@ Third-party plugin submissions are handled through Anthropic's current plugin su
 
 ## Cursor
 
-Add this MCP server to Cursor's MCP configuration, using the absolute local repository path:
-
-    {
-      "mcpServers": {
-        "scaletest": {
-          "command": "uv",
-          "args": ["--directory", "/absolute/path/to/scaletest-mcp", "run", "scaletest"]
-        }
-      }
-    }
+Cursor workspace configuration is provided at .cursor/mcp.json. It uses ${workspaceFolder}, which Cursor resolves to the repository root. Open the repository in Cursor and approve the ScaleTest server when prompted.
 
 ## Enable local demo-cluster scaling controls
 
