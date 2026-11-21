@@ -71,11 +71,15 @@ Windows PowerShell:
 
 ## Claude Code plugin
 
-Test the plugin directly from a local checkout:
+Prepare the local Python environment once before launching the plugin:
+
+    uv sync --extra dev --extra kubernetes
+
+Then test the plugin from a local checkout:
 
     claude --plugin-dir .
 
-The plugin manifest embeds its MCP server configuration and uses CLAUDE_PLUGIN_ROOT to launch the server from its installed plugin directory. The user must have uv installed. The plugin exposes the ScaleTest tools and the /scaletest:load-test Skill. There is intentionally no root .mcp.json, so Claude does not also parse CLAUDE_PLUGIN_ROOT as a project-level variable.
+The plugin manifest embeds its MCP server configuration and uses CLAUDE_PLUGIN_ROOT to launch the server from its installed plugin directory. It uses `uv run --no-sync` so startup does not resolve or install Python dependencies during the MCP handshake. Re-run `uv sync --extra dev --extra kubernetes` after pulling dependency changes. The plugin exposes the ScaleTest tools and the /scaletest:load-test Skill. There is intentionally no root .mcp.json, so Claude does not also parse CLAUDE_PLUGIN_ROOT as a project-level variable.
 
 To verify a local plugin, keep the `claude --plugin-dir .` session open and run `/mcp` inside it. Also try `/scaletest:load-test`. A locally loaded plugin is session-scoped; a separate `claude mcp list` invocation outside that session does not prove whether that local plugin session loaded its bundled server.
 
