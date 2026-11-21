@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "scaletest": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "${workspaceFolder}",
+        "run",
+        "scaletest"
+      ],
+      "env": {
+        "SCALETEST_MAX_VUS": "10",
+        "SCALETEST_MAX_DURATION_SECONDS": "60",
+        "SCALETEST_MAX_RPS": "5"
+      }
+    }
+  }
+}
