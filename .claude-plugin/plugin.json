@@ -15,5 +15,16 @@
     "kubernetes",
     "autoscaling",
     "mcp"
-  ]
+  ],
+  "mcpServers": {
+    "scaletest": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "${CLAUDE_PLUGIN_ROOT}",
+        "run",
+        "scaletest"
+      ]
+    }
+  }
 }
