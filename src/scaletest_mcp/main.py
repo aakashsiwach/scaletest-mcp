@@ -1,6 +1,12 @@
 from mcp.server.fastmcp import FastMCP
 
-from .availability import (\n    get_availability_report,\n    mark_scaling_event,\n    start_availability_monitor,\n    stop_availability_monitor,\n)\nfrom .config import settings
+from .availability import (
+    get_availability_report,
+    mark_scaling_event,
+    start_availability_monitor,
+    stop_availability_monitor,
+)
+from .config import settings
 from .engine import latest_summary, run_load_test, validate_url
 from .kubernetes import (
     CONFIRMATION,
@@ -44,7 +50,14 @@ def get_safety_limits() -> dict:
         "kubernetes_allowed_namespaces": sorted(settings.k8s_allowed_namespaces),
         "kubernetes_allowed_deployments": sorted(settings.k8s_allowed_deployments),
         "kubernetes_mutation_confirmation": CONFIRMATION,
-        "public_url_can_modify_infrastructure": False,\n        "availability_monitoring": {\n            "min_probe_interval_ms": 250,\n            "max_probe_interval_ms": 10000,\n            "default_max_downtime_slo_ms": 3000,\n            "max_observation_seconds": 3600,\n            "max_concurrent_monitors": 3,\n        },
+        "public_url_can_modify_infrastructure": False,
+        "availability_monitoring": {
+            "min_probe_interval_ms": 250,
+            "max_probe_interval_ms": 10000,
+            "default_max_downtime_slo_ms": 3000,
+            "max_observation_seconds": 3600,
+            "max_concurrent_monitors": 3,
+        },
     }
 
 @mcp.tool()
@@ -83,11 +96,6 @@ def change_local_vertical_resources(
         memory_request, memory_limit, confirmation,
     )
 
-def main() -> None:
-    mcp.run()
-
-if __name__ == "__main__":
-    main()
 
 @mcp.tool()
 def start_scaling_availability_monitor(
@@ -121,3 +129,11 @@ def get_scaling_availability_report(monitor_id: str) -> dict:
 def stop_scaling_availability_monitor(monitor_id: str) -> dict:
     """Stop passive monitoring and persist JSON and Markdown reports."""
     return stop_availability_monitor(monitor_id)
+
+
+def main() -> None:
+    mcp.run()
+
+
+if __name__ == "__main__":
+    main()
