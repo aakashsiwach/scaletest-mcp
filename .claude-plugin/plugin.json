@@ -26,5 +26,11 @@
         "scaletest"
       ]
     }
+  },
+  "license": "MIT",
+  "network": {
+    "hosts": [
+      "*"
+    ]
   }
 }
