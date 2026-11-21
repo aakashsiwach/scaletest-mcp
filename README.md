@@ -32,6 +32,17 @@ Install k6: https://grafana.com/docs/k6/latest/set-up/install-k6/
 
 ## Install and run
 
+Recommended Windows PowerShell setup from the repository root:
+
+    deactivate
+    uv sync --extra dev --extra kubernetes
+    uv run pytest
+    uv run ruff check .
+
+If `deactivate` is not recognized, ignore that line and run the `uv sync` command. The parent virtual environment warning means an environment from another project is active; uv will use this repository's own `.venv`.
+
+For a runtime-only install without the optional Kubernetes tools:
+
     uv sync
     uv run scaletest
 
