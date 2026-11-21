@@ -5,7 +5,6 @@ import re
 
 from .config import settings
 
-
 CONFIRMATION = "I_APPROVE_LOCAL_CLUSTER_SCALING"
 
 
@@ -41,7 +40,7 @@ def _check_local_context() -> str:
     try:
         config.load_kube_config()
         _, active = config.list_kube_config_contexts()
-    except Exception as exc:  # noqa: BLE001 - return any kubeconfig/context validation failure to MCP caller
+    except Exception as exc:
         raise PermissionError(f"Could not verify the active kubeconfig context: {exc}") from exc
     context_name = active.get("name") if active else None
     if context_name not in settings.k8s_allowed_contexts:
