@@ -13,9 +13,10 @@ Only test systems you own or have explicit written authorization to test. Agree 
 - MCP server with URL inspection, authorized k6 execution and test summary tools.
 - Conservative defaults: at most 10 virtual users and 60 seconds per public-URL test.
 - Public IP validation; private/loopback targets are blocked unless local mode is explicitly enabled.
-- Kubernetes deployment/HPA observation.
+- Kubernetes Deployment/HPA observation.
 - Explicitly gated local horizontal scaling (HPA bounds) and vertical resource changes.
 - Kubernetes mutations are disabled by default, require an exact confirmation string, and are restricted to allowlisted namespaces, Deployments and Kubernetes contexts.
+- Claude Code plugin manifest, plugin-provided MCP server configuration and a ScaleTest usage Skill.
 - Local demo app, Deployment, Service, HPA and in-cluster k6 Job manifests.
 - No proxy rotation, IP rotation or WAF bypass.
 
@@ -44,6 +45,33 @@ Windows PowerShell:
 
     $env:SCALETEST_ALLOW_PRIVATE_TARGETS="true"
     uv run scaletest
+
+## Claude Code plugin
+
+Test the plugin directly from a local checkout:
+
+    claude --plugin-dir .
+
+The plugin's .mcp.json uses CLAUDE_PLUGIN_ROOT, so it launches the MCP server from its installed plugin directory. The user must have uv installed; uv installs the project environment on first run. The plugin exposes the ScaleTest tools and the /scaletest:load-test Skill.
+
+For a reviewable plugin release, run:
+
+    claude plugin validate . --strict
+
+Third-party plugin submissions are handled through Anthropic's current plugin submission flow; community listing requires review and approval. Until then, users can test the plugin locally with --plugin-dir.
+
+## Cursor
+
+Add this MCP server to Cursor's MCP configuration, using the absolute local repository path:
+
+    {
+      "mcpServers": {
+        "scaletest": {
+          "command": "uv",
+          "args": ["--directory", "/absolute/path/to/scaletest-mcp", "run", "scaletest"]
+        }
+      }
+    }
 
 ## Enable local demo-cluster scaling controls
 
@@ -98,24 +126,7 @@ Environment variables:
 - change_local_horizontal_scaling(...): update HPA minimum/maximum replicas.
 - change_local_vertical_resources(...): patch a Deployment's pod CPU/memory requests and limits.
 
-Vertical resource changes update the pod template and trigger a Kubernetes rollout; they are not in-place resizing. Horizontal changes edit the HPA replica bounds and HPA reconciles asynchronously. Metrics Server must be healthy for CPU-based HPA to react to load.
-
-## Claude Code
-
-Start Claude Code from the repository root; the checked-in .mcp.json launches the local MCP server using uv. The .claude-plugin/plugin.json is a minimal plugin manifest; validate it against current Claude Code plugin requirements before publishing to a marketplace.
-
-## Cursor
-
-Add this MCP server to Cursor's MCP configuration, using the absolute local repository path:
-
-    {
-      "mcpServers": {
-        "scaletest": {
-          "command": "uv",
-          "args": ["--directory", "/absolute/path/to/scaletest-mcp", "run", "scaletest"]
-        }
-      }
-    }
+Vertical resource changes update the pod template and trigger a Kubernetes rollout; they are not in-place resizing. Horizontal changes edit HPA replica bounds and HPA reconciles asynchronously. Metrics Server must be healthy for CPU-based HPA to react to load.
 
 ## Local Kubernetes demo
 
@@ -125,11 +136,16 @@ Add this MCP server to Cursor's MCP configuration, using the absolute local repo
 4. Install Metrics Server compatible with your cluster.
 5. Apply demo/kubernetes/deployment.yaml and demo/kubernetes/hpa.yaml.
 6. Verify: kubectl -n scaletest-demo get deploy,pods,hpa
-7. Launch MCP with SCALETEST_ALLOW_PRIVATE_TARGETS=true and SCALETEST_ENABLE_K8S_MUTATIONS=true.
-8. Apply demo/kubernetes/k6-load.yaml to generate load inside the cluster: kubectl apply -f demo/kubernetes/k6-load.yaml. Watch scaling with kubectl -n scaletest-demo get hpa,pods -w.
-9. Change HPA bounds with change_local_horizontal_scaling and inspect actual replica count. For vertical scaling, use change_local_vertical_resources and observe the Deployment rollout.
+7. Set SCALETEST_ALLOW_PRIVATE_TARGETS=true and SCALETEST_ENABLE_K8S_MUTATIONS=true before launching the MCP server.
+8. Apply demo/kubernetes/k6-load.yaml to generate load inside the cluster. Watch scaling with kubectl -n scaletest-demo get hpa,pods -w.
+9. Change HPA bounds with change_local_horizontal_scaling and inspect actual replica count.
+10. For a vertical experiment, delete the HPA first, record baseline resources, call change_local_vertical_resources, wait for the rollout, then rerun the same workload. Reapply the HPA only after the vertical test.
 
-The included k6 Job uses 20 virtual users for 120 seconds against the local demo Service. It is only intended for the disposable local demo cluster. Monitor the load-generator's CPU/memory separately; otherwise it can become the bottleneck. These controls only affect the allowlisted local demo cluster, never Defectly's infrastructure.
+Delete the k6 Job before repeating it:
+
+    kubectl -n scaletest-demo delete job scaletest-k6-load
+
+Monitor the load-generator's CPU/memory separately; otherwise it can become the bottleneck. These controls only affect the allowlisted local demo cluster, never Defectly's infrastructure.
 
 ## Development
 

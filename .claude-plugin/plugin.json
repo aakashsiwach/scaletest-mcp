@@ -1,5 +1,19 @@
 {
   "name": "scaletest",
+  "displayName": "ScaleTest MCP",
+  "description": "Local-first HTTP load testing and guarded Kubernetes scaling experiments through Claude Code.",
   "version": "0.1.0",
-  "description": "Local-first MCP tools for controlled HTTP load testing and Kubernetes scaling observation"
+  "author": {
+    "name": "Aakash Siwach"
+  },
+  "repository": "https://github.com/aakashsiwach/scaletest-mcp",
+  "homepage": "https://github.com/aakashsiwach/scaletest-mcp",
+  "keywords": [
+    "devops",
+    "load-testing",
+    "k6",
+    "kubernetes",
+    "autoscaling",
+    "mcp"
+  ]
 }
