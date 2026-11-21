@@ -30,6 +30,17 @@ Only test systems you own or have explicit written authorization to test. Agree 
 
 Install k6: https://grafana.com/docs/k6/latest/set-up/install-k6/
 
+Windows (Winget):
+
+    winget install k6 --source winget
+
+Open a new PowerShell window after installation. If `k6` is still not found, check the default machine install path and add it to the current session:
+
+    $k6Path = Join-Path $env:ProgramFiles "k6"
+    & (Join-Path $k6Path "k6.exe") version
+    $env:Path = "$k6Path;$env:Path"
+    k6 version
+
 ## Install and run
 
 Recommended Windows PowerShell setup from the repository root:
@@ -64,6 +75,8 @@ Test the plugin directly from a local checkout:
     claude --plugin-dir .
 
 The plugin manifest embeds its MCP server configuration and uses CLAUDE_PLUGIN_ROOT to launch the server from its installed plugin directory. The user must have uv installed. The plugin exposes the ScaleTest tools and the /scaletest:load-test Skill. There is intentionally no root .mcp.json, so Claude does not also parse CLAUDE_PLUGIN_ROOT as a project-level variable.
+
+To verify a local plugin, keep the `claude --plugin-dir .` session open and run `/mcp` inside it. Also try `/scaletest:load-test`. A locally loaded plugin is session-scoped; a separate `claude mcp list` invocation outside that session does not prove whether that local plugin session loaded its bundled server.
 
 For a reviewable plugin release, run:
 
